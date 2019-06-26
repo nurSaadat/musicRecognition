@@ -71,34 +71,37 @@ def dft(x):
 			X[m] += x[n]*np.exp(-np.pi * 2j * m * n / N)
 	return X
 
-def fft(x):
-    '''
-    Fast Fourier Transformation
-    
-   	Parameters
-   	----------
-    x: array of real numbers
-    
-    Output
-    ----------
-    X: array of complex numbers
-    '''
-    n = np.size(x)
-    if n == 1:
-        return x
-    a_even = fft(x[::2])
-    a_odd = fft(x[1::2])   
-    X = np.zeros((n,), dtype=np.complex128)
-    k = n//2
-    w_one =  np.exp(-2j * np.pi * 1 / n)
-    w = 1 + 0j
-    for i in range(k):
-        X[i] += a_even[i] + w * a_odd[i]
-        X[k + i] += a_even[i] - w * a_odd[i]
-        w = w * w_one
-    return X
+def fft(x, kernel=None):
+	'''
+	Fast Fourier Transformation
+	
+	Parameters
+	----------
+	x: array of real numbers
+	
+	Output
+	----------
+	X: array of complex numbers
+	'''
+	if kernel is not None:
+		x = x * kernel(x.size)
 
-def stft(x, window_size, step_size, one_sided=True):
+	n = np.size(x)
+	if n == 1:
+		return x
+	a_even = fft(x[::2])
+	a_odd = fft(x[1::2])   
+	X = np.zeros((n,), dtype=np.complex128)
+	k = n//2
+	w_one =  np.exp(-2j * np.pi * 1 / n)
+	w = 1 + 0j
+	for i in range(k):
+		X[i] += a_even[i] + w * a_odd[i]
+		X[k + i] += a_even[i] - w * a_odd[i]
+		w = w * w_one
+	return X
+
+def stft(x, window_size, step_size, one_sided=True, kernel=None):
 	'''
 	Short Time Fourier Transformation
 	
@@ -119,10 +122,11 @@ def stft(x, window_size, step_size, one_sided=True):
 		frequency_size = window_size
 	time_size = (x.size - window_size) // step_size + 1
 	spectrogramm = np.zeros((time_size, frequency_size), dtype = np.complex128)
+
 	for i in tqdm(range(time_size)):
 		shift = i * step_size
 		window_x = x[shift:shift + window_size]
-		spectrogramm[i] = fft(window_x)[:frequency_size]
+		spectrogramm[i] = fft(window_x, kernel)[:frequency_size]
 	return spectrogramm.T
 
 def idft(X):
