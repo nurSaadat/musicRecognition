@@ -82,6 +82,21 @@ NOTES = {
 	"B_5" : 987.77
 }
 
+KEYS = [
+	"C_3", 
+	"C#3",
+	"D_3",
+	"D#3",
+	"E_3",
+	"F_3",
+	"F#3",
+	"G_3",
+	"G#3",
+	"A_3",
+	"A#3",
+	"B_3"
+]
+
 STEP_SEC = 0.2
 WINDOW_SEC = 0.2
 
@@ -170,18 +185,30 @@ def wav2txt(src_file, dst_file, threshold=0.2):
 		os.mkdir(mel_directory)
 	mel_img_path = mel_directory + file_name + ".pdf"
 	plt.figure(figsize=(60, 60))
-	S = librosa.feature.melspectrogram(S=spectr_abs)
-	plt.imshow(S[:HEIGHT,:] ** 0.125)
+	mel_spectr = librosa.feature.melspectrogram(
+		data, 
+		sr=16000,
+		n_fft=2048,
+		hop_length=512,
+		n_mels=100
+	)
+	plt.imshow(mel_spectr[:HEIGHT,:] ** 0.125)
 	plt.savefig(mel_img_path)
 
-	# chroma_directory = "chroma/"
-	# if not os.path.exists(chroma_directory):
-	# 	os.mkdir(chroma_directory)
-	# chroma_img_path = chroma_directory + file_name + ".pdf"
-	# plt.figure(figsize=(60, 60))
-	# S = librosa.
-	# plt.imshow(S[:HEIGHT,:] ** 0.125)
-	# plt.savefig(chroma_img_path)
+	chroma_directory = "chroma/"
+	if not os.path.exists(chroma_directory):
+		os.mkdir(chroma_directory)
+	chroma_img_path = chroma_directory + file_name + ".pdf"
+	plt.figure(figsize=(60, 60))
+	chroma_spectr = librosa.feature.chroma_stft(
+		data, 
+		sr=16000,
+		n_fft=2048,
+		hop_length=512
+	)
+	plt.figure(figsize=(60, 60))
+	plt.imshow(chroma_spectr, origin='top')
+	plt.savefig(chroma_img_path)
 
 	table = pixel2hz(spectr.shape[0])
 	max_pixel = np.argmax(spectr_abs, axis=0)
@@ -205,6 +232,17 @@ def wav2txt(src_file, dst_file, threshold=0.2):
 	with open(dst_file, 'w') as txt_file:
 		txt_file.write(music)
 
+	# note_max = np.argmax(chroma_spectr, axis=0)
+	# logging.info("Note results hz:\n {}".format(note_max))
+
+	# notes_list = []
+	# for i in range(note_max.size):
+	# 	notes_list.append(KEYS[note_max[i]])
+
+	# music = "".join(notes_list)
+	# with open(dst_file, 'w') as txt_file:
+	# 	txt_file.write(music)
+
 
 def get_args():
 	parser = argparse.ArgumentParser(description='Convert wav to music or vice versa')
@@ -226,7 +264,7 @@ def get_args():
 	parser.add_argument(
 		'-threshold',
 		type=float,
-		help='window'
+		help='threshold'
 	)
 	parser.add_argument(
 		'-t',
